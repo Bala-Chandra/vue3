@@ -4,11 +4,10 @@
     <!-- Rows -->
     <div class="space-y-3">
 
-      <!-- Loop rows -->
       <div v-for="(row, idx) in rows" :key="idx" class="space-y-2">
 
-        <!-- Operator Row (only if not first row) -->
-        <div v-if="rows.length > 0 && idx > 0" class="flex justify-start mb-1">
+        <!-- Operator Row -->
+        <div v-if="idx > 0" class="flex justify-start mb-1">
           <select
             v-model="row.operator"
             class="px-3 py-1 border text-sm rounded bg-white shadow-sm"
@@ -20,7 +19,6 @@
 
         <!-- Input Row -->
         <div class="flex items-center gap-3">
-
           <select v-model="row.value" class="px-3 py-2 border rounded flex-1">
             <option value="" disabled>Select an option</option>
             <option
@@ -40,48 +38,54 @@
             Remove
           </button>
         </div>
-      </div>
 
+      </div>
     </div>
 
-    <!-- Add & Save All -->
+    <!-- Add & Save buttons -->
     <div class="mt-4 flex gap-2">
+
+      <!-- Add Another -->
       <button
         @click="addRow"
-        class="text-sm px-3 py-1 bg-white border rounded shadow-sm hover:bg-gray-100"
         :disabled="!canAdd"
+        class="text-sm px-3 py-1 rounded shadow-sm transition border"
+        :class="canAdd
+          ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700'
+          : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
+        "
       >
         + Add another
       </button>
 
+      <!-- Save All -->
       <button
         @click="saveAll"
-        :class="canAdd? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700' : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'"
-        :disabled="rowsAllEmpty">
+        :disabled="rowsAllEmpty"
+        class="text-sm px-3 py-1 rounded shadow-sm transition border"
+        :class="!rowsAllEmpty
+          ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700'
+          : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed'
+        "
+      >
         Save all
       </button>
+
     </div>
 
   </div>
 </template>
 
 
+
 <script setup>
 import { ref, computed } from 'vue'
-import { useHomeStore } from '@/stores/home' // adjust path to your store file
+import { useHomeStore } from '@/stores/home'
 
 const props = defineProps({
-  // optional category/subcategory metadata to save with rows
-  category: {
-    type: String,
-    default: ''
-  },
-  subcategory: {
-    type: String,
-    default: ''
-  },
+  category: { type: String, default: '' },
+  subcategory: { type: String, default: '' },
 
-  // dropdown options
   options: {
     type: Array,
     default: () => ([
@@ -94,61 +98,59 @@ const props = defineProps({
 
 const emit = defineEmits(['rows-updated', 'saved'])
 
-// local simple rows array (no saved flag)
-const rows = ref([{ value: '', label: '', operator: '' }])
+// ROWS STATE
+const rows = ref([{ value: '', operator: '' }])
 
+// COMPUTED
 const lastRow = computed(() => rows.value[rows.value.length - 1])
+const canAdd = computed(() => !!lastRow.value.value)
+const rowsAllEmpty = computed(() => rows.value.every(r => !r.value))
 
-// whether we can add a new row (last row should be non-empty)
-const canAdd = computed(() => !!(lastRow.value && lastRow.value.value && lastRow.value.value !== ''))
-
-// whether all rows are empty (disables Save all when true)
-const rowsAllEmpty = computed(() => rows.value.every(r => !r.value || r.value === ''))
-
+// ACTIONS
 function addRow() {
-  rows.value.push({ value: '', label: '', operator: 'OR' }) // default operator for new rows
+  rows.value.push({ value: '', operator: 'OR' })
   emit('rows-updated', rows.value)
 }
 
 function removeRow(index) {
   rows.value.splice(index, 1)
-  if (rows.value.length === 0) rows.value.push({ value: '', label: '', operator: '' })
+  if (rows.value.length === 0) {
+    rows.value.push({ value: '', operator: '' })
+  }
   emit('rows-updated', rows.value)
 }
 
-/**
- * Save all rows into the home store.
- * - only non-empty values are stored
- * - uses props.category / props.subcategory as metadata
- */
 function saveAll() {
   const home = useHomeStore()
+
   // clean rows: only values that are non-empty
   const cleaned = rows.value.map(r => ({ value: r.value })).filter(r => r.value && r.value !== '')
 
-  // call store action to persist into searchRowdata
+  if (!cleaned.length) return
+
   const payload = {
     category: props.category || '',
-    subcategory: props.selectedTab || '',
+    subcategory: props.subcategory || '',
     rows: cleaned
   }
 
-  const result = home.addSearchRows(payload) // stores into home.searchRowdata & searchPayload
+  // if editing, pass the edit index as replaceIndex
+  if (home.editMode && Number.isInteger(home.editIndex)) {
+    payload.replaceIndex = home.editIndex
+  }
 
-  // 🔥 turn saveMode = true here
-  home.setSaveMode(true)
+  const result = home.addSearchRows(payload)
 
-  // emit event to parent with saved result
+  // home.addSearchRows already sets saveMode(true) and clears editMode if it applied the edit
+  // emit to parent
   emit('saved', result)
 
-  // also emit rows-updated
-  emit('rows-updated', rows.value)
-
-  // optional: reset local rows to a single empty row after save
-  rows.value = [{ value: '', label: '', operator: '' }]
+  // reset local rows
+  rows.value = [{ value: '', operator: '' }]
 }
 </script>
 
+
+
 <style scoped>
-/* small niceties if you want */
 </style>

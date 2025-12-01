@@ -5,6 +5,8 @@ export const useHomeStore = defineStore('homeStore', {
   state: () => ({
     saveMode: false,
     editMode: false,
+    // index being edited when editMode === true. null if not editing.
+    editIndex: null,
     viewMode: true,
     searchRowdata: [],
     searchPayload: {
@@ -13,35 +15,76 @@ export const useHomeStore = defineStore('homeStore', {
       query: []
     }
   }),
+
   actions: {
+    // Set saveMode flag
+    setSaveMode(value) {
+      this.saveMode = !!value
+    },
+
+    // Set edit mode (and optionally index)
+    setEditMode(enabled, index = null) {
+      this.editMode = !!enabled
+      this.editIndex = enabled ? index : null
+    },
+
     /**
      * Add rows for a particular category/subcategory into searchRowdata
-     * payload: { category, subcategory, rows } where rows = [{ value }, ...]
+     * If `replaceIndex` is provided (number) OR `this.editMode && this.editIndex != null` then
+     * the function will replace the existing entry at that index instead of appending.
+     *
+     * payload: { category, subcategory, rows, replaceIndex }
      */
-     // Set saveMode flag
-      setSaveMode(value) {
-        this.saveMode = value
-      },
-    addSearchRows({ category = '', subcategory = '', rows = [] } = {}) {
-      // Prepare a cleaned rows array (only non-empty values)
-      const cleaned = (rows || []).map(r => ({ value: r.value })).filter(r => r.value && r.value !== '')
+    addSearchRows({ category = '', subcategory = '', rows = [], replaceIndex = null } = {}) {
+      // Prepare cleaned rows array (only non-empty values)
+      const cleaned = (rows || [])
+        .map(r => ({ value: r.value }))
+        .filter(r => r.value && r.value !== '')
 
-      // push into searchRowdata as a record (you can change shape as needed)
-      this.searchRowdata.push({
+      if (cleaned.length === 0) {
+        // nothing to save
+        return null
+      }
+
+      const record = {
         category,
         subcategory,
         rows: cleaned,
         createdAt: new Date().toISOString()
-      })
+      }
 
-      // update searchPayload: last saved payload (useful for immediate query)
+      // Determine index to replace:
+      // precedence: explicit replaceIndex argument -> store.editMode/editIndex -> append
+      let targetIndex = null
+      if (Number.isInteger(replaceIndex)) {
+        targetIndex = replaceIndex
+      } else if (this.editMode && Number.isInteger(this.editIndex)) {
+        targetIndex = this.editIndex
+      }
+
+      if (targetIndex !== null && targetIndex >= 0 && targetIndex < this.searchRowdata.length) {
+        // replace existing entry
+        this.searchRowdata.splice(targetIndex, 1, record)
+      } else {
+        // append
+        this.searchRowdata.push(record)
+      }
+
+      // update searchPayload to latest saved payload
       this.searchPayload = {
         category,
         subcategory,
         query: cleaned.map(r => r.value)
       }
 
-      // optionally return what was saved
+      // mark saved state
+      this.setSaveMode(true)
+
+      // if we were in edit mode, clear it (we've applied the edit)
+      if (this.editMode) {
+        this.setEditMode(false, null)
+      }
+
       return { category, subcategory, rows: cleaned }
     },
 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCategoryCStore } from '../stores/categoryC'
+import DropDown from './DropDown.vue'
 
 const store = useCategoryCStore();
 
@@ -16,10 +17,8 @@ onMounted(() => {
   // run your check here
 })
 
+const categoryName = computed(() => store.name);
 
-
-// derived uppercase name for display
-const componentNameUpper = computed(() => (props.component.title || '').toUpperCase());
 
 // selectedTab with two-way binding
 const selectedTab = computed({
@@ -56,23 +55,27 @@ const tabs = computed(() => store.tabs);
     <!-- TAB CONTENT -->
     <div class="text-gray-700">
       <div v-if="selectedTab === 'sub1'">
-        <h3 class="text-lg font-semibold mb-2">Subcategory 1</h3>
-        <p>Content for subcategory 1 of {{ componentNameUpper }}.</p>
+          <h3 class="text-lg font-semibold mb-2">Subcategory 1</h3>
+        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
+            @rows-updated="(e) => console.log('Rows updated:', e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub2'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 2</h3>
-        <p>Content for subcategory 2 of {{ componentNameUpper }}.</p>
+        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
+          @rows-updated="(e) => console.log('Rows updated:', e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub3'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 3</h3>
-        <p>Content for subcategory 3 of {{ componentNameUpper }}.</p>
+        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
+          @rows-updated="(e) => console.log('Rows updated:', e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub4'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 4</h3>
-        <p>Content for subcategory 4 of {{ componentNameUpper }}.</p>
+        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
+          @rows-updated="(e) => console.log('Rows updated:', e)" />
       </div>
     </div>
   </div>
