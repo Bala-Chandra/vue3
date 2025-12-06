@@ -2,8 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useCategoryAStore } from '../stores/categoryA'
 import DropDown from './DropDown.vue'
+import { useHomeStore } from '@/stores/home'
 
-const store = useCategoryAStore()
+
+const store = useCategoryAStore();
+const homeStore = useHomeStore();
 
 const props = defineProps({
   component: {
@@ -14,6 +17,7 @@ const props = defineProps({
 
 onMounted(() => {
   console.log("Component mounted!")
+  
   // run your check here
 })
 
@@ -29,6 +33,16 @@ const selectedTab = computed({
 })
 
 const tabs = computed(() => store.tabs);
+
+const emit = defineEmits(['rows-updated', 'saved'])
+
+const rowsUpdated = (updatedRows) => {
+  emit('rows-updated', updatedRows);
+};
+
+const rowSaved = (savedRow) => {
+  emit('saved', savedRow);
+};
 
 </script>
 
@@ -59,26 +73,26 @@ const tabs = computed(() => store.tabs);
     <div class="text-gray-700">
       <div v-if="selectedTab === 'sub1'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 1</h3>
-       <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
-          @rows-updated="(e) => console.log('Rows updated:', e)" />
+       <DropDown :tabKey="selectedTab" :category="categoryName" @saved="rowSaved"
+          @rows-updated="rowsUpdated(e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub2'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 2</h3>
-        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
-          @rows-updated="(e) => console.log('Rows updated:', e)" />
+        <DropDown :tabKey="selectedTab" :category="categoryName" @saved="rowSaved"
+          @rows-updated="rowsUpdated(e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub3'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 3</h3>
-        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
-          @rows-updated="(e) => console.log('Rows updated:', e)" />
+        <DropDown :tabKey="selectedTab" :category="categoryName" @saved="rowSaved"
+          @rows-updated="rowsUpdated(e)" />
       </div>
 
       <div v-else-if="selectedTab === 'sub4'">
         <h3 class="text-lg font-semibold mb-2">Subcategory 4</h3>
-        <DropDown :tabKey="selectedTab" :category="categoryName" @row-saved="(e) => console.log('Row saved:', e)"
-          @rows-updated="(e) => console.log('Rows updated:', e)" />
+         <DropDown :tabKey="selectedTab" :category="categoryName" @saved="rowSaved"
+          @rows-updated="rowsUpdated(e)" />
       </div>
     </div>
   </div>

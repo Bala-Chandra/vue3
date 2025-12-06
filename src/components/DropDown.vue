@@ -79,7 +79,7 @@
 
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useHomeStore } from '@/stores/home'
 
 const props = defineProps({
@@ -96,10 +96,22 @@ const props = defineProps({
   }
 })
 
+
+
 const emit = defineEmits(['rows-updated', 'saved'])
 
 // ROWS STATE
 const rows = ref([{ value: '', operator: '' }])
+
+onMounted(() => {
+  const homeStore = useHomeStore()
+
+  // If in edit mode, pre-fill rows from the store
+ if(homeStore.editMode && homeStore.editIndex !== null) {
+    rows.value = homeStore.searchRowdata[homeStore.editIndex].rows;
+
+  }
+})
 
 // COMPUTED
 const lastRow = computed(() => rows.value[rows.value.length - 1])
@@ -124,14 +136,14 @@ function saveAll() {
   const home = useHomeStore()
 
   // clean rows: only values that are non-empty
-  const cleaned = rows.value.map(r => ({ value: r.value })).filter(r => r.value && r.value !== '')
+  const cleaned = rows.value.map(r => ({ value: r.value , operator: r.operator? r.operator : 'OR'})).filter(r => r.value && r.value !== '')
 
   if (!cleaned.length) return
 
   const payload = {
     category: props.category || '',
     subcategory: props.subcategory || '',
-    rows: cleaned
+    rows: cleaned,
   }
 
   // if editing, pass the edit index as replaceIndex

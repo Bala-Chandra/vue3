@@ -12,7 +12,8 @@ export const useHomeStore = defineStore('homeStore', {
     searchPayload: {
       category: '',
       subcategory: '',
-      query: []
+      query: [],
+      operator: 'OR'
     }
   }),
 
@@ -38,7 +39,7 @@ export const useHomeStore = defineStore('homeStore', {
     addSearchRows({ category = '', subcategory = '', rows = [], replaceIndex = null } = {}) {
       // Prepare cleaned rows array (only non-empty values)
       const cleaned = (rows || [])
-        .map(r => ({ value: r.value }))
+        //.map(r => ({ value: r.value }))
         .filter(r => r.value && r.value !== '')
 
       if (cleaned.length === 0) {
@@ -50,7 +51,8 @@ export const useHomeStore = defineStore('homeStore', {
         category,
         subcategory,
         rows: cleaned,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+         operator: 'OR'
       }
 
       // Determine index to replace:
@@ -71,11 +73,12 @@ export const useHomeStore = defineStore('homeStore', {
       }
 
       // update searchPayload to latest saved payload
-      this.searchPayload = {
-        category,
-        subcategory,
-        query: cleaned.map(r => r.value)
-      }
+      // this.searchPayload = {
+      //   category,
+      //   subcategory,
+      //   query: cleaned.map(r => r.value),
+      //   operator: 'OR'
+      // }
 
       // mark saved state
       this.setSaveMode(true)
@@ -94,5 +97,8 @@ export const useHomeStore = defineStore('homeStore', {
     setSearchRowdata(newArray) {
       this.searchRowdata = Array.isArray(newArray) ? newArray : []
     }
+  },
+  persist: {
+    enabled: true,
   }
 })
